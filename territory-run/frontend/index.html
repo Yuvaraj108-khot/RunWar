@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Territory Run - Capture the map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#050816" />
+  <link
+    href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./css/styles.css?v=3.0" />
+</head>
+<body>
+  <div id="app">
+    <!-- HEADER -->
+    <header class="tr-header">
+      <div class="logo">Territory<span>Run</span></div>
+      <div id="auth-container" class="auth-container">
+        <button id="btn-auth-toggle" class="btn-ghost">Login</button>
+        <div id="auth-menu" class="auth-menu hidden">
+          <div id="profile-view" class="profile-view hidden">
+            <div class="profile-name" id="profile-name-display"></div>
+            <button id="btn-edit-name" class="btn-ghost small">Edit Name</button>
+            <button id="btn-show-users" class="btn-ghost small">👥 Users</button>
+            <button id="btn-logout" class="btn-danger small">Logout</button>
+          </div>
+          <div id="profile-edit" class="profile-edit hidden">
+            <input id="profile-name-input" type="text" placeholder="Display name" />
+            <div style="display:flex;gap:0.75rem;">
+              <button id="btn-save-name" class="btn-primary small">Save</button>
+              <button id="btn-cancel-edit" class="btn-ghost small">Cancel</button>
+            </div>
+          </div>
+          <div id="users-list" class="profile-view hidden">
+            <div style="font-size: 0.85rem; margin-bottom: 0.5rem; opacity: 0.8;">Registered Users:</div>
+            <div id="users-list-content" style="max-height: 200px; overflow-y: auto; font-size: 0.85rem;"></div>
+            <button id="btn-back-to-profile" class="btn-ghost small" style="margin-top: 0.5rem;">← Back</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+      <!-- AUTH SECTION -->
+      <section id="auth-section">
+        <div class="auth-container-main">
+          <!-- TAB SWITCHER -->
+          <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Login</button>
+            <button class="auth-tab" data-tab="signup">Sign Up</button>
+            <div class="auth-tab-indicator"></div>
+          </div>
+
+          <!-- AUTH CONTENT -->
+          <div class="auth-content">
+            <!-- LOGIN TAB -->
+            <div class="auth-panel active" id="login-panel" data-tab="login">
+              <div class="auth-panel-inner">
+                <h2 class="auth-title">Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to continue your conquest</p>
+                
+                <form id="login-form" class="auth-form">
+                  <div class="form-group">
+                    <input 
+                      id="login-email" 
+                      type="email" 
+                      placeholder="Email address" 
+                      required 
+                    />
+                    <span class="form-focus-bg"></span>
+                  </div>
+                  <div class="form-group">
+                    <input 
+                      id="login-password" 
+                      type="password" 
+                      placeholder="Password" 
+                      required 
+                    />
+                    <span class="form-focus-bg"></span>
+                  </div>
+                  <button type="submit" class="btn-primary btn-block">Sign In</button>
+                </form>
+
+                <div class="auth-divider">
+                  <span>New to Territory Run?</span>
+                </div>
+
+                <button class="btn-secondary btn-block" onclick="document.querySelector('[data-tab=signup]').click()">
+                  Create Account
+                </button>
+              </div>
+            </div>
+
+            <!-- SIGNUP TAB -->
+            <div class="auth-panel" id="signup-panel" data-tab="signup">
+              <div class="auth-panel-inner">
+                <h2 class="auth-title">Create Account</h2>
+                <p class="auth-subtitle">Join and start capturing territories</p>
+                
+                <form id="signup-form" class="auth-form">
+                  <div class="form-group">
+                    <input 
+                      id="signup-name" 
+                      type="text" 
+                      placeholder="Display name" 
+                      required 
+                    />
+                    <span class="form-focus-bg"></span>
+                  </div>
+                  <div class="form-group">
+                    <input 
+                      id="signup-email" 
+                      type="email" 
+                      placeholder="Email address" 
+                      required 
+                    />
+                    <span class="form-focus-bg"></span>
+                  </div>
+                  <div class="form-group">
+                    <input 
+                      id="signup-password" 
+                      type="password" 
+                      placeholder="Password (min. 6 chars)" 
+                      required 
+                    />
+                    <span class="form-focus-bg"></span>
+                  </div>
+                  <button type="submit" class="btn-primary btn-block">Create Account</button>
+                </form>
+
+                <div class="auth-divider">
+                  <span>Already have an account?</span>
+                </div>
+
+                <button class="btn-secondary btn-block" onclick="document.querySelector('[data-tab=login]').click()">
+                  Sign In
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME SECTION (hidden by default) -->
+      <section id="game-section" class="hidden">
+        <!-- MAP -->
+        <div id="map-container">
+          <div id="map"></div>
+          <div id="protection-overlay" class="protection-overlay hidden">
+            <span class="shield-icon">🛡️</span>
+            <span id="protection-text"></span>
+          </div>
+        </div>
+
+        <!-- TIMER SETUP MODAL -->
+        <div id="timer-setup-modal" class="modal hidden">
+          <div class="modal-content">
+            <h2>Set Session Duration</h2>
+            <div class="form-group">
+              <label>Duration (minutes)</label>
+              <input id="timer-input" type="number" min="1" max="120" value="10" />
+            </div>
+            <div class="modal-buttons">
+              <button id="btn-timer-ok" class="btn-primary">Start with Timer</button>
+              <button id="btn-timer-cancel" class="btn-ghost">Start without Timer</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAPBOX TOKEN MODAL -->
+        <div id="mapbox-token-modal" class="modal hidden">
+          <div class="modal-content">
+            <h2>Setup Mapbox Token</h2>
+            <p>Map requires a Mapbox token to display. <a href="https://account.mapbox.com/tokens/" target="_blank">Get one here</a></p>
+            <div class="form-group">
+              <input id="mapbox-token-input" type="password" placeholder="Paste your Mapbox token" />
+            </div>
+            <div class="modal-buttons">
+              <button id="btn-token-save" class="btn-primary">Save Token</button>
+              <button id="btn-token-skip" class="btn-ghost">Skip for Now</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HUD & CONTROLS -->
+        <div id="hud">
+          <div class="hud-row">
+            <div class="hud-card">
+              <span class="label">⏱️ Time</span>
+              <span id="hud-timer" class="value">00:00</span>
+            </div>
+            <div class="hud-card">
+              <span class="label">Distance</span>
+              <span id="hud-distance" class="value">0.00 km</span>
+            </div>
+            <div class="hud-card">
+              <span class="label">Points</span>
+              <span id="hud-points" class="value">0</span>
+            </div>
+          </div>
+          <div class="hud-row">
+            <button id="btn-start" class="btn-primary">🏃 Start Run</button>
+            <button id="btn-stop" class="btn-danger" disabled>⏹ Stop Run</button>
+          </div>
+        </div>
+
+        <!-- LEADERBOARDS -->
+        <section id="leaderboards">
+          <h3>🏆 Leaderboards</h3>
+          <div id="leaderboards-content"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- MAPBOX JS -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+  
+  <!-- INITIALIZE MAPBOX TOKEN EARLY -->
+  <script>
+    window.MAPBOX_TOKEN = localStorage.getItem('tr_mapbox') || '';
+  </script>
+
+  <!-- LOAD APP -->
+  <script type="module" src="./js/app.js?v=3.0"></script>
+
+  <!-- SERVICE WORKER -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(console.error);
+    }
+  </script>
+</body>
+</html>

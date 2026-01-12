@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Territory Run - Debug</title>
+  <style>
+    body { font-family: monospace; background: #050816; color: #0ff; padding: 20px; }
+    .test { margin: 10px 0; padding: 10px; border: 1px solid #0ff; border-radius: 4px; }
+    .success { border-color: #0f0; color: #0f0; }
+    .error { border-color: #f00; color: #f00; }
+    button { padding: 8px 12px; margin: 5px; background: #0ff; color: #000; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #00d9e9; }
+  </style>
+</head>
+<body>
+  <h1>Territory Run - Debug Panel</h1>
+  <div id="results"></div>
+  <button onclick="testBackend()">Test Backend Connectivity</button>
+  <button onclick="testAuth()">Test Auth (Login/Register)</button>
+  <button onclick="testSessionAPI()">Test Session API</button>
+  <button onclick="clearLocalStorage()">Clear Local Storage</button>
+
+  <script>
+    const API_BASE = 'http://localhost:4000';
+    const results = document.getElementById('results');
+
+    function log(msg, isError = false) {
+      const div = document.createElement('div');
+      div.className = `test ${isError ? 'error' : 'success'}`;
+      div.textContent = msg;
+      results.appendChild(div);
+      console.log(msg);
+    }
+
+    async function testBackend() {
+      results.innerHTML = '';
+      try {
+        const res = await fetch(`${API_BASE}/test`);
+        const data = await res.json();
+        if (res.ok) {
+          log(`✓ Backend responding: ${JSON.stringify(data)}`);
+        } else {
+          log(`✗ Backend error: ${res.status} ${JSON.stringify(data)}`, true);
+        }
+      } catch (err) {
+        log(`✗ Cannot reach backend: ${err.message}`, true);
+      }
+    }
+
+    async function testAuth() {
+      results.innerHTML = '';
+      const email = `test${Date.now()}@test.com`;
+      const password = 'Test123!';
+      const displayName = 'TestUser';
+
+      log(`Testing register with email: ${email}`);
+      try {
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, displayName })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          log(`✓ Register successful. Token: ${data.token.slice(0, 20)}...`);
+          localStorage.setItem('tr_token', data.token);
+          localStorage.setItem('tr_user', JSON.stringify(data.user));
+        } else {
+          log(`✗ Register failed: ${res.status} ${JSON.stringify(data)}`, true);
+        }
+      } catch (err) {
+        log(`✗ Register error: ${err.message}`, true);
+      }
+
+      log(`Testing login with same credentials`);
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          log(`✓ Login successful. Token: ${data.token.slice(0, 20)}...`);
+        } else {
+          log(`✗ Login failed: ${res.status} ${JSON.stringify(data)}`, true);
+        }
+      } catch (err) {
+        log(`✗ Login error: ${err.message}`, true);
+      }
+    }
+
+    async function testSessionAPI() {
+      results.innerHTML = '';
+      const token = localStorage.getItem('tr_token');
+      if (!token) {
+        log(`✗ No token found. Run "Test Auth" first.`, true);
+        return;
+      }
+
+      log(`Testing session start with token: ${token.slice(0, 20)}...`);
+      try {
+        const res = await fetch(`${API_BASE}/sessions/start`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (res.ok && data.sessionId) {
+          log(`✓ Session started. ID: ${data.sessionId}`);
+          window.testSessionId = data.sessionId;
+        } else {
+          log(`✗ Session start failed: ${res.status} ${JSON.stringify(data)}`, true);
+        }
+      } catch (err) {
+        log(`✗ Session start error: ${err.message}`, true);
+      }
+    }
+
+    function clearLocalStorage() {
+      localStorage.clear();
+      results.innerHTML = '';
+      log('✓ Local storage cleared');
+    }
+  </script>
+</body>
+</html>

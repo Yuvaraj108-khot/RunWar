@@ -1,0 +1,10 @@
+{
+  "short_name": "TerritoryRun",
+  "name": "Territory Run",
+  "description": "Walk, run, and capture real-world territories.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050816",
+  "theme_color": "#050816",
+  "icons": []
+}
